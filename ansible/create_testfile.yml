@@ -1,0 +1,9 @@
+---
+- name: Create testfile with content
+  hosts: all
+  become: yes
+  tasks:
+    - name: Ensure testfile is present
+      copy:
+        content: "{{ foo }}"
+        dest: ~/testfile

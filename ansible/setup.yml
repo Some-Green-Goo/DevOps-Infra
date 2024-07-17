@@ -1,0 +1,172 @@
+---
+- name: filebrowser
+  hosts: "*"
+  become: yes
+  vars_files:
+    - vars.yml
+
+  tasks:
+  - name: update rocky
+    ansible.builtin.dnf:
+      name: "*"
+      state: latest
+  
+  - name: Install the latest version of firewalld
+    ansible.builtin.dnf:
+      name: firewalld
+      state: latest
+
+  - name: Copy public.xml with owner and permissions
+    ansible.builtin.copy:
+      src: files/public.xml
+      dest: /etc/firewalld/zones/public.xml
+      owner: root
+      group: root
+      mode: '0644'
+
+  - name: Make sure firewalld unit is running
+    ansible.builtin.systemd:
+      state: started
+      name: firewalld
+      enabled: yes
+
+  - name: Install the latest version of yum-utils
+    ansible.builtin.dnf:
+      name: yum-utils
+      state: latest
+
+  - name: Set up docker repository
+    shell: |
+      yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+  - name: Install the latest version of Docker Engine and containerd
+    ansible.builtin.dnf:
+      name: 
+        - docker-ce
+        - docker-ce-cli
+        - containerd.io
+      state: latest
+
+  - name: Start and enable docker
+    systemd:
+      name: docker
+      state: started
+      enabled: yes
+
+  - name: Create filebrowser directory 
+    file:
+      path: /home/rocky/filebrowser
+      state: directory
+      owner: rocky
+      group: rocky
+      mode: '1777'
+
+  - name: Check if file exists
+    stat:
+      path: "/home/rocky/filebrowser.db"
+    register: register_file_browser_file
+
+  - name: Touch a file and set permissions to 0644
+    ansible.builtin.file:
+      path: "/home/rocky/filebrowser.db"
+      state: touch
+      owner: rocky
+      group: rocky
+      mode: '0666'
+    when: not register_file_browser_file.stat.exists
+
+  - name: Copy docker-filebrowser.service
+    ansible.builtin.template:
+        src: templates/docker-filebrowser.service
+        dest: /usr/lib/systemd/system/docker-filebrowser.service
+
+  - name: Create homer data directory 
+    file:
+      path: /home/rocky/homer
+      state: directory
+      owner: rocky
+      group: rocky
+      mode: '1777'
+
+  - name: Copy docker-homer.service
+    ansible.builtin.template:
+        src: templates/docker-homer.service
+        dest: /usr/lib/systemd/system/docker-homer.service
+
+  - name: Just force systemd to reread configs (2.4 and above)
+    ansible.builtin.systemd:
+      daemon_reload: true
+
+  - name: Make sure homer unit is running
+    ansible.builtin.systemd:
+      state: started
+      name: docker-homer.service
+      enabled: yes
+
+  - name: Copy public.xml with owner and permissions
+    ansible.builtin.copy:
+      src: files/config.yml
+      dest: /home/rocky/homer/config.yml
+      owner: rocky
+      group: rocky
+      mode: '0644'
+
+  - name: Make sure filebrowser unit is running
+    ansible.builtin.systemd:
+      state: started
+      name: docker-filebrowser.service
+      enabled: yes
+
+  - name: Install the latest version of nginx
+    ansible.builtin.dnf:
+      name: nginx
+      state: latest
+
+  - name: Copy public.xml with owner and permissions
+    ansible.builtin.copy:
+      src: files/nginx.conf
+      dest: /etc/nginx/nginx.conf
+      owner: root
+      group: root
+      mode: '0644'
+    register: nginx
+    
+  - name: Copy fullchain.pem
+    ansible.builtin.copy:
+      src: files/fullchain.pem
+      dest: /etc/nginx/fullchain.pem
+      owner: root
+      group: root
+      mode: '0644'
+    register: cert
+
+  - name: Copy privkey.pem
+    ansible.builtin.copy:
+      src: files/privkey.pem
+      dest: /etc/nginx/privkey.pem
+      owner: root
+      group: root
+      mode: '0600'
+    register: key
+
+  - name: Set a hostname
+    ansible.builtin.hostname:
+      name: ashtonhurst
+
+  - name: Make sure nginx unit is running
+    ansible.builtin.systemd:
+      state: started
+      name: nginx.service
+      enabled: yes
+
+  - name: restart nginx if a file changesd
+    service:
+      name: nginx
+      state: restarted
+    when: (nginx is changed) or (cert is changed) or (key is changed)
+
+  - name: Allow httpd to network connect
+    ansible.builtin.seboolean:
+      name: httpd_can_network_connect
+      state: yes
+      persistent: yes

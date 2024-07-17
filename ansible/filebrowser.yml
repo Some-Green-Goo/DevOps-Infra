@@ -1,0 +1,88 @@
+---
+- name: filebrowser
+  hosts: "all"
+  become: yes
+
+  tasks:
+  - name: Create filebrowser directory 
+    file:
+      path: /home/rocky/filebrowser
+      state: directory
+      owner: rocky
+      group: rocky
+      mode: '1777'
+
+  tasks:
+  - name: Create filebrowser directory 
+    file:
+      path: /home/rocky/filebrowser-db
+      state: directory
+      owner: rocky
+      group: rocky
+      mode: '1777'
+
+  - name: Touch a file and set permissions to 0644
+    ansible.builtin.file:
+      path: "/home/rocky/filebrowser-db/filebrowser.db"
+      state: touch
+      owner: rocky
+      group: rocky
+      mode: '0666'
+
+  - name: setup filebrowser container
+    containers.podman.podman_container:
+      name: filebrowser
+      image: docker.io/filebrowser/filebrowser:s6
+      state: started
+      volumes:
+      - /home/rocky/filebrowser/:/srv:z
+      - /home/rocky/filebrowser-db/filebrowser.db:/database/filebrowser.db:z
+      ports:
+      - "8080:80"
+      env:
+          PUID: "0"
+          PGID: "0"
+
+  - name: Install the latest version of nginx
+    ansible.builtin.dnf:
+      name: nginx
+      state: latest
+
+  - name: Copy nginx.conf to remote
+    ansible.builtin.copy:
+      src: files/nginx.conf
+      dest: /etc/nginx/nginx.conf
+      owner: root
+      group: root
+      mode: '0644'
+    register: nginx
+
+  - name: Copy fullchain.pem
+    ansible.builtin.copy:
+      src: files/fullchain.pem
+      dest: /etc/nginx/fullchain.pem
+      owner: root
+      group: root
+      mode: '0644'
+    register: cert
+
+  - name: Copy privkey.pem
+    ansible.builtin.copy:
+      src: files/privkey.pem
+      dest: /etc/nginx/privkey.pem
+      owner: root
+      group: root
+      mode: '0600'
+    register: key
+
+  - name: restart nginx if a file changesd
+    service:
+      name: nginx
+      state: restarted
+    when: (nginx is changed) or (cert is changed) or (key is changed)
+
+  - name: Allow httpd to network connect
+    ansible.builtin.seboolean:
+      name: httpd_can_network_connect
+      state: yes
+      persistent: yes

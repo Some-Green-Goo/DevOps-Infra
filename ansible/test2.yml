@@ -1,0 +1,9 @@
+---
+- name: Create otherfile with content
+  hosts: all
+  become: yes
+  tasks:
+    - name: Ensure testfile is present
+      copy:
+        content: "{{ fruit }}"
+        dest: /home/rocky/fruit-testfile

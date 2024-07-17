@@ -1,0 +1,40 @@
+---
+- name: vm_setup
+  hosts: all
+  become: yes
+
+  tasks:
+  - name: update rocky
+    ansible.builtin.dnf:
+      name: "*"
+      state: latest
+
+  - name: Install the latest version of firewalld
+    ansible.builtin.dnf:
+      name: firewalld
+      state: latest
+
+  - name: Copy public.xml with owner and permissions
+    ansible.builtin.copy:
+      src: files/public.xml
+      dest: /etc/firewalld/zones/public.xml
+      owner: root
+      group: root
+      mode: '0644'
+
+  - name: Make sure firewalld unit is running
+    ansible.builtin.systemd:
+      state: started
+      name: firewalld
+      enabled: yes
+
+  - name: Install the latest version of podman
+    ansible.builtin.dnf:
+      name: 
+        - podman
+      state: latest
+
+  - name: Set a hostname
+    ansible.builtin.hostname:
+      name: "{{ hostname }}"
+      use: "systemd"

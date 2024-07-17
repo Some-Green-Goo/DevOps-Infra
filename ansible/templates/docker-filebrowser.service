@@ -1,0 +1,42 @@
+[Unit]
+# define dependencies
+After=docker.service
+#PartOf=docker.service
+Requires=docker.service
+
+[Service]
+# Load ENV vars from a file. Note that this env vars will only be
+# accessible in the context of the Exec* commands, and not within the
+# container itself. To make env-vars accessible within the Container, we use
+# the `--env-file` flag for the `docker run` command.
+#EnvironmentFile=/etc/sysconfig/filebrowser
+
+# Even though we explicitly run the container using the `--rm` flag, there
+# may be leftover containers (eg. after a system-, docker- or app-crash).
+# Starting a container with an existing name will always fail.
+
+ExecStartPre=-/usr/bin/docker stop filebrowser
+ExecStartPre=-/usr/bin/docker rm -f filebrowser
+
+ExecStart=/usr/bin/docker run \
+    --name filebrowser \
+    -v /home/rocky/filebrowser/:/srv:z \
+    -v /home/rocky/filebrowser.db:/database/filebrowser.db:z \
+    -e PUID=1000 \
+    -e PGID=1000 \
+    -p 8080:80 \
+    filebrowser/filebrowser:s6
+
+# Stop command.
+ExecStop=/usr/bin/docker stop filebrowser
+
+# Ensure log messages are correctly tagged in the system log.
+SyslogIdentifier=filebrowser
+
+# Auto-Restart the container after a crash.
+Restart=always
+
+
+[Install]
+# make sure service is started after docker is up
+WantedBy=multi-user.target
