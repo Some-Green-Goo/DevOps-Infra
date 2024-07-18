@@ -1,8 +1,8 @@
-route-53.tf
 gitcrypt.key
 **/.backups/*
 ansible.cfg
-terraform.lock.hcl
+.terraform.lock.hcl
+
 # Local .terraform directories
 **/.terraform/*
 

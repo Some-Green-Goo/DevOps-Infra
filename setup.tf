@@ -34,6 +34,7 @@ data "template_file" "ansible_cfg" {
 
   vars = {
     remote_user = local.remote_user
+    private_key_path = local.private_key_path
   }
 }
 
