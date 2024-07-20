@@ -1,0 +1,49 @@
+---
+- name: nginx
+  hosts: "all"
+  become: yes
+
+  tasks:
+  - name: Install the latest version of nginx
+    ansible.builtin.dnf:
+      name: nginx
+      state: latest
+
+  - name: Copy nginx.conf to remote
+    ansible.builtin.copy:
+      src: files/nginx.conf
+      dest: /etc/nginx/nginx.conf
+      owner: root
+      group: root
+      mode: '0644'
+    register: nginx
+
+  - name: Copy fullchain.pem
+    ansible.builtin.copy:
+      src: files/fullchain.pem
+      dest: /etc/nginx/fullchain.pem
+      owner: root
+      group: root
+      mode: '0644'
+    register: cert
+
+  - name: Copy privkey.pem
+    ansible.builtin.copy:
+      src: files/privkey.pem
+      dest: /etc/nginx/privkey.pem
+      owner: root
+      group: root
+      mode: '0600'
+    register: key
+
+  - name: restart nginx if a file changesd
+    service:
+      name: nginx
+      state: restarted
+    when: (nginx is changed) or (cert is changed) or (key is changed)
+
+  - name: Allow httpd to network connect
+    ansible.builtin.seboolean:
+      name: httpd_can_network_connect
+      state: yes
+      persistent: yes

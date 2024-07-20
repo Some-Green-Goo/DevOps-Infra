@@ -7,12 +7,24 @@ resource "aws_vpc" "infra" {
   tags = var.tags
 }
 
-# Create a Subnet
-resource "aws_subnet" "infra" {
+# Create a Public Subnet
+resource "aws_subnet" "infra_public" {
   vpc_id            = aws_vpc.infra.id
-  cidr_block        = "10.0.1.0/24"
+  cidr_block        = "10.0.1.0/25"
   availability_zone = "us-east-2a"
   map_public_ip_on_launch = true
+
+  depends_on = [aws_internet_gateway.infra]
+
+tags = var.tags
+}
+
+# Create a Private Subnet
+resource "aws_subnet" "infra_private" {
+  vpc_id            = aws_vpc.infra.id
+  cidr_block        = "10.0.1.128/25"
+  availability_zone = "us-east-2a"
+  map_public_ip_on_launch = false
 
   depends_on = [aws_internet_gateway.infra]
 
@@ -39,7 +51,7 @@ tags = var.tags
 }
 
 resource "aws_route_table_association" "infra" {
-  subnet_id      = aws_subnet.infra.id
+  subnet_id      = aws_subnet.infra_public.id
   route_table_id = aws_route_table.infra.id
 }
 

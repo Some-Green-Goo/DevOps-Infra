@@ -5,3 +5,16 @@ variable "tags" {
     Name = "tf-infra"
   }
 }
+
+locals {
+ playbook_vars = {
+    filebrowser = {
+    }
+    nginx = {
+    }
+    immich = {
+    }
+  }
+}
+
+

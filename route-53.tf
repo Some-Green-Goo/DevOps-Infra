@@ -9,7 +9,7 @@ resource "aws_route53_record" "site_domain" {
   name    = local.domain_name
   type    = "A"
   ttl     = 300
-  records = [aws_instance.infra.public_ip]
+  records = [aws_instance.web.public_ip]
 }
 
 resource "aws_route53_record" "www" {
@@ -17,7 +17,7 @@ resource "aws_route53_record" "www" {
   name    = "www.${local.domain_name}"
   type    = "A"
   ttl     = 300
-  records = [aws_instance.infra.public_ip]
+  records = [aws_instance.web.public_ip]
 }
 
 resource "aws_route53_record" "all" {

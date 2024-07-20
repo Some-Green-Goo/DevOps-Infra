@@ -1,21 +1,23 @@
 locals {
+  playbook_names = ["filebrowser", "nginx"]
+
   playbooks = {
-    filebrowser = {
-      playbook = "ansible/filebrowser.yml"
+    for name in local.playbook_names : name => {
+      playbook = "ansible/${name}.yml"
       vars = {
-        foo = local.foo
+        for key, value in local.playbook_vars[name] : key => value
       }
     }
   }
   ingress_ports = [22, 80, 443]
 }
 
-resource "aws_instance" "infra" {
+resource "aws_instance" "web" {
   ami           = "ami-08f7b2cb6f6b78c21"
   instance_type = "t3a.small"
-  subnet_id     = aws_subnet.infra.id
+  subnet_id     = aws_subnet.infra_public.id
   availability_zone  = "us-east-2a"
-  vpc_security_group_ids = [aws_security_group.infra.id]
+  vpc_security_group_ids = [aws_security_group.web.id]
   key_name = aws_key_pair.infra.key_name
   root_block_device {
     volume_size = 10
@@ -27,17 +29,17 @@ resource "aws_instance" "infra" {
       connection {
         type = "ssh"
         user = local.remote_user
-        private_key = file(local.private_key)
-        host = aws_instance.infra.public_ip
+        private_key = file(local.private_key_path)
+        host = aws_instance.web.public_ip
       }
   }
 
 tags = var.tags
 }
 
-resource "aws_security_group" "infra" {
-  name        = "allow_infra"
-  description = "Allow SSH and infra inbound traffic"
+resource "aws_security_group" "web" {
+  name        = "allow_web"
+  description = "Allow SSH and web inbound traffic"
   vpc_id      = aws_vpc.infra.id
 
   dynamic "ingress" {
@@ -64,7 +66,7 @@ tags = var.tags
 
 resource "ansible_playbook" "vm_setup" {
   playbook  = "ansible/vm_setup.yml"
-  name      = aws_instance.infra.public_ip
+  name      = aws_instance.web.public_ip
   verbosity = 1
   extra_vars = {
     hostname = local.hostname
@@ -75,7 +77,7 @@ resource "ansible_playbook" "vm_setup" {
 resource "ansible_playbook" "configure" {
   for_each = local.playbooks
   playbook  = each.value.playbook
-  name      = aws_instance.infra.public_ip
+  name      = aws_instance.web.public_ip
   verbosity = 1
   replayable = true
   extra_vars = each.value.vars
