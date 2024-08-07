@@ -6,15 +6,15 @@ variable "tags" {
   }
 }
 
-locals {
- playbook_vars = {
-    filebrowser = {
-    }
-    nginx = {
-    }
-    immich = {
-    }
-  }
-}
+#locals {
+# playbook_vars = {
+#    filebrowser = {
+#    }
+#    nginx = {
+#    }
+#    immich = {
+#    }
+#  }
+#}
 
 
