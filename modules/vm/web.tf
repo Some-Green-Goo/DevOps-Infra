@@ -2,19 +2,19 @@ locals {
   playbooks = {
     for name in var.playbook_names : name => {
       playbook = "ansible/${name}.yml"
-      vars = {
-        for key, value in var.playbook_vars[name] : key => value
-      }
+      vars = (
+        length(var.playbook_vars) > 0 && contains(keys(var.playbook_vars), name)
+      ) ? { for key, value in var.playbook_vars[name] : key => value } : {}
     }
   }
 }
 
-resource "aws_instance" "web" {
+resource "aws_instance" "vm" {
   ami           = "ami-08f7b2cb6f6b78c21"
   instance_type = "t3a.small"
   subnet_id     = var.subnet_id
   availability_zone  = "us-east-2a"
-  vpc_security_group_ids = [aws_security_group.web.id]
+  vpc_security_group_ids = [aws_security_group.vm.id]
   key_name = var.key_name
   root_block_device {
     volume_size = 10
@@ -27,16 +27,16 @@ resource "aws_instance" "web" {
         type = "ssh"
         user = var.remote_user
         private_key = file(var.private_key_path)
-        host = aws_instance.web.public_ip
+        host = aws_instance.vm.public_ip
       }
   }
 
   tags = var.tags
 }
 
-resource "aws_security_group" "web" {
-  name        = "allow_web"
-  description = "Allow SSH and web inbound traffic"
+resource "aws_security_group" "vm" {
+  name        = "allow_vm"
+  description = "Allow SSH and vm inbound traffic"
   vpc_id      = var.vpc_id
 
   dynamic "ingress" {
@@ -63,7 +63,7 @@ resource "aws_security_group" "web" {
 
 resource "ansible_playbook" "vm_setup" {
   playbook  = "ansible/vm_setup.yml"
-  name      = aws_instance.web.public_ip
+  name      = aws_instance.vm.public_ip
   verbosity = 1
   extra_vars = {
     hostname = var.hostname
@@ -74,7 +74,7 @@ resource "ansible_playbook" "vm_setup" {
 resource "ansible_playbook" "configure" {
   for_each = local.playbooks
   playbook  = each.value.playbook
-  name      = aws_instance.web.public_ip
+  name      = aws_instance.vm.public_ip
   verbosity = 1
   replayable = true
   extra_vars = each.value.vars

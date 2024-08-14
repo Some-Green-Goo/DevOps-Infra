@@ -30,7 +30,7 @@ resource "aws_key_pair" "infra" {
 }
 
 data "template_file" "ansible_cfg" {
-  template = file("${path.module}/ansible.cfg.tpl")
+  template = file("${path.module}/tpl-templates/ansible.cfg.tpl")
 
   vars = {
     remote_user = local.remote_user

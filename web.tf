@@ -1,23 +1,22 @@
 locals {
   web = {
+    ingress_ports = [22, 80, 443]
     playbook_names = ["filebrowser", "nginx"]
-    vm_name = "web"
     playbook_vars = {
       filebrowser = {
         var1 = "value1"
         var2 = "value2"
       }
       nginx = {
-        var1 = "value1"
-        var2 = "value2"
+        var3 = "value3"
+        var4 = "value4"
       }
     }
-    ingress_ports = [22, 80, 443]
   }
 }
 
 module "web" {
-  source           = "./modules/web"
+  source           = "./modules/vm"
   vpc_id           = aws_vpc.infra.id
   subnet_id        = aws_subnet.infra_public.id
   ingress_ports    = local.web.ingress_ports
