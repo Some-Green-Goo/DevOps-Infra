@@ -47,3 +47,15 @@ variable "subnet_id" {
   description = "The ID of the public subnet where the instances will be deployed"
   type        = string
 }
+
+variable "private_dns" {
+  description = "The private DNS name for the VM"
+  type        = string
+  default     = "dns"
+}
+
+variable "domain_name" {
+  description = "The domain name for the Route 53 hosted zone"
+  type        = string
+  default     = "placeholder.xyz"
+}

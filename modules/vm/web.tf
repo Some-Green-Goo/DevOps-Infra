@@ -81,6 +81,17 @@ resource "ansible_playbook" "configure" {
   depends_on = [ansible_playbook.vm_setup]
 }
 
+resource "aws_route53_record" "private" {
+  zone_id = data.aws_route53_zone.site_domain.zone_id
+  name    = "private-${var.private_dns}.${var.domain_name}"
+  type    = "A"
+  ttl     = 300
+  records = [aws_instance.vm.private_ip]
+}
+
+data "aws_route53_zone" "site_domain" {
+  name = "ashtonhurst.xyz"
+}
 
 terraform {
   required_providers {

@@ -1,6 +1,7 @@
 locals {
   web = {
     ingress_ports = [22, 80, 443]
+    private_dns = "web"
     playbook_names = ["filebrowser", "nginx"]
     playbook_vars = {
       filebrowser = {
@@ -27,4 +28,6 @@ module "web" {
   hostname         = local.hostname
   playbook_names   = local.web.playbook_names
   playbook_vars    = local.web.playbook_vars
+  private_dns      = local.web.private_dns
+  domain_name      = local.domain_name  
 }

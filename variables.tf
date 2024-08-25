@@ -1,9 +1,15 @@
 variable "tags" {
-  description = "A map of tags to assign to the resource"
+  description = "Tags to assign to the resource"
   type        = map(string)
   default = {
     Name = "tf-infra"
   }
+}
+
+variable "domain_name" {
+  description = "Domain name"
+  type        = string
+  default     = "placeholder.xyz"
 }
 
 #locals {
