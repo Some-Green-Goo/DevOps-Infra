@@ -1,7 +1,7 @@
 locals {
-  web = {
+  db = {
     ingress_ports = [22, 80, 443]
-    private_dns = "web"
+    private_dns = "db"
     playbook_names = ["filebrowser", "nginx"]
     playbook_vars = {
       filebrowser = {
@@ -16,19 +16,19 @@ locals {
   }
 }
 
-module "web" {
+module "db" {
   source           = "./modules/vm"
   vpc_id           = aws_vpc.infra.id
-  subnet_id        = aws_subnet.infra_public.id
-  ingress_ports    = local.web.ingress_ports
+  subnet_id        = aws_subnet.infra_private.id
+  ingress_ports    = local.db.ingress_ports
   tags             = var.tags
   key_name         = aws_key_pair.infra.key_name
   remote_user      = local.remote_user
   private_key_path = local.private_key_path
-  hostname         = local.hostname
-  playbook_names   = local.web.playbook_names
-  playbook_vars    = local.web.playbook_vars
-  private_dns      = local.web.private_dns
+  hostname         = "db-${local.hostname}"
+  playbook_names   = local.db.playbook_names
+  playbook_vars    = local.db.playbook_vars
+  private_dns      = local.db.private_dns
   domain_name      = local.domain_name
-  use_jumphost     = false
+  use_jumphost     = true
 }

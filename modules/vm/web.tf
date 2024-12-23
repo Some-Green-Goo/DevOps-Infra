@@ -7,6 +7,9 @@ locals {
       ) ? { for key, value in var.playbook_vars[name] : key => value } : {}
     }
   }
+  
+  ssh_args = var.use_jumphost ? "-o ProxyJump=rocky@${aws_instance.vm.public_ip} -i ~/.ssh/id_rsa" : ""
+
 }
 
 resource "aws_instance" "vm" {
@@ -35,7 +38,7 @@ resource "aws_instance" "vm" {
 }
 
 resource "aws_security_group" "vm" {
-  name        = "allow_vm"
+  name        = "${var.private_dns}-allow_vm"
   description = "Allow SSH and vm inbound traffic"
   vpc_id      = var.vpc_id
 

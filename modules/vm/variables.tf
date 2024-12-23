@@ -59,3 +59,9 @@ variable "domain_name" {
   type        = string
   default     = "placeholder.xyz"
 }
+
+variable "use_jumphost" {
+  description = "Whether to use a jumphost for SSH connections"
+  type        = bool
+  default     = false
+}
