@@ -17,7 +17,7 @@ resource "aws_instance" "vm" {
   vpc_security_group_ids = [aws_security_group.vm.id]
   key_name = var.key_name
   root_block_device {
-    volume_size = 10
+    volume_size = var.volume_size
   }
 
   provisioner "remote-exec" {
@@ -68,7 +68,7 @@ resource "ansible_playbook" "vm_setup" {
   extra_vars = {
     hostname = var.hostname
   }
-  replayable = false
+  replayable = true
 }
 
 resource "ansible_playbook" "configure" {

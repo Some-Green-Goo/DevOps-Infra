@@ -59,3 +59,9 @@ variable "domain_name" {
   type        = string
   default     = "placeholder.xyz"
 }
+
+variable "volume_size" {
+  description = "vm storage size"
+  type        = string
+  default     = "10"
+}
